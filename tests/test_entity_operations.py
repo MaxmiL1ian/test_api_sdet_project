@@ -1,6 +1,5 @@
 from api.endpoints import Entity
 from api.models import Entity as EntityModel, EntityList  
-import time
 
 class TestEntityOperations: 
     def test_get_entity(self, api_client, test_entity):
@@ -14,12 +13,13 @@ class TestEntityOperations:
 
         entity = EntityModel.model_validate(response.json())
 
+        original_data = test_entity["original_data"]
         assert entity.id == entity_id
-        assert entity.title == test_entity["original_data"]["title"]
-        assert entity.verified == test_entity["original_data"]["verified"]
-        assert entity.addition.additional_info == test_entity["original_data"]["addition"]["additional_info"]
-        assert entity.addition.additional_number == test_entity["original_data"]["addition"]["additional_number"]
-        assert entity.important_numbers == test_entity["original_data"]["important_numbers"]
+        assert entity.title == original_data["title"]
+        assert entity.verified == original_data["verified"]
+        assert entity.addition.additional_info == original_data["addition"]["additional_info"]
+        assert entity.addition.additional_number == original_data["addition"]["additional_number"]
+        assert entity.important_numbers == original_data["important_numbers"]
 
     def test_update_entity(self, api_client, test_entity): 
         entity_id = test_entity["id"] 
@@ -113,3 +113,29 @@ class TestEntityOperations:
                         print(f"Предупреждение: не удалось удалить тестовую сущность с ID {entity_id}")
                 except Exception as e:
                     print(f"Ошибка при удалении тестовой сущности: {str(e)}")
+
+    def test_delete_entity(self, api_client):
+        entity_data = {
+            "addition": {
+                "additional_info": "Сущность для удаления",
+                "additional_number": 555
+            },
+            "important_numbers": [5, 5, 5],
+            "title": "Тестовая сущность для удаления",
+            "verified": False
+        }
+        
+        create_response = api_client.post(Entity.CREATING_ENTITY, json=entity_data)
+        assert create_response.status_code == 200, "Не удалось создать сущность для теста удаления"
+        
+        entity_id = create_response.json()
+        assert entity_id is not None, "ID сущности отсутствует в ответе"
+        
+        get_response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
+        assert get_response.status_code == 200, "Не удалось получить созданную сущность"
+        
+        delete_response = api_client.delete(Entity.DELETING_ENTITY.replace("{id}", str(entity_id)))
+        assert delete_response.status_code == 204, f"Ошибка при удалении сущности: получен статус {delete_response.status_code} вместо ожидаемого 204"
+
+        get_after_delete_response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
+        assert get_after_delete_response.status_code == 500, f"Ожидался статус 404 (Not Found), получен {get_after_delete_response.status_code}. Сущность не была удалена."
