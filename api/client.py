@@ -14,6 +14,9 @@ class ApiClient:
     def put(self, endpoint, data=None, json=None, headers=None):
         return self._request("PUT", endpoint, data=data, json=json, headers=headers)
     
+    def patch(self, endpoint, data=None, json=None, headers=None):
+        return self._request("PATCH", endpoint, data=data, json=json, headers=headers)
+    
     def delete(self, endpoint, headers=None):
         return self._request("DELETE", endpoint, headers=headers)
     

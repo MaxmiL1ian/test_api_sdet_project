@@ -1,8 +1,9 @@
 from api.endpoints import Entity
 from api.models import Entity as EntityModel  
+import time
 
 class TestEntityOperations: 
-     def test_get_entity(self, api_client, test_entity):
+    def test_get_entity(self, api_client, test_entity):
         entity_id = test_entity["id"]
         
         response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
@@ -19,3 +20,24 @@ class TestEntityOperations:
         assert entity.addition.additional_info == test_entity["original_data"]["addition"]["additional_info"]
         assert entity.addition.additional_number == test_entity["original_data"]["addition"]["additional_number"]
         assert entity.important_numbers == test_entity["original_data"]["important_numbers"]
+
+    def test_update_entity(self, api_client, test_entity): 
+        entity_id = test_entity["id"] 
+                      
+        updated_data = {
+            "addition": {
+                "additional_info": "Обновленная информация",
+                "additional_number": 456
+            },
+            "important_numbers": [4, 5, 6], 
+            "title": "Обновленная сущность",
+            "verified": False,
+        }  
+
+        response = api_client.patch(
+            Entity.UPDATING_ENTITY.replace("{id}", str(entity_id)), 
+            json=updated_data
+        )
+
+        assert response.status_code == 204
+        
