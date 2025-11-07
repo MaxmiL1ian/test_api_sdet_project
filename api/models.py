@@ -14,14 +14,6 @@ class Entity(BaseModel):
     title: str
     verified: bool
 
-# Основная модель для корневого объекта
-class Entitys(BaseModel):
-    id: int
-    title: str
-    verified: bool
-    addition: Addition
-    important_numbers: List[int]
-
 # Модель для списка сущностей (корневая структура)
-class EntitysList(BaseModel):
-    entity: List[Entitys]
+class EntityList(BaseModel):
+    entity: List[Entity]
