@@ -1,5 +1,6 @@
 from api.endpoints import Entity
-from api.models import Entity as EntityModel, EntityList  
+from api.models import Entity as EntityModel, EntityList   
+from tests.test_data import UPDATED_ENTITY, ENTITY_FOR_DELETE, CREATE_ENTITY
 
 class TestEntityOperations: 
     def test_get_entity(self, api_client, test_entity):
@@ -8,7 +9,7 @@ class TestEntityOperations:
         response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
         
 
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Неожиданный статус-код: {response.status_code}"
         
 
         entity = EntityModel.model_validate(response.json())
@@ -23,33 +24,25 @@ class TestEntityOperations:
 
     def test_update_entity(self, api_client, test_entity): 
         entity_id = test_entity["id"] 
-                      
-        updated_data = {
-            "addition": {
-                "additional_info": "Обновленная информация",
-                "additional_number": 456
-            },
-            "important_numbers": [4, 5, 6], 
-            "title": "Обновленная сущность",
-            "verified": False,
-        }  
+
+        entity_data = UPDATED_ENTITY
 
         response = api_client.patch(
             Entity.UPDATING_ENTITY.replace("{id}", str(entity_id)), 
-            json=updated_data
+            json = entity_data
         )
 
-        assert response.status_code == 204
+        assert response.status_code == 204, f"Неожиданный статус-код: {response.status_code}"
         
     def test_get_all_entities(self, api_client, multiple_test_entities):
 
         response = api_client.get(Entity.GETTING_ALL_ENTITIES)
         
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Неожиданный статус-код: {response.status_code}"
         
         entities_list = EntityList.model_validate(response.json())
         
-        assert len(entities_list.entity) > 0
+        assert len(entities_list.entity) > 0, f"Сущности не были созданы"
 
         # Получаем список ID из созданных сущностей
         created_ids = [entity["id"] for entity in multiple_test_entities]
@@ -70,16 +63,8 @@ class TestEntityOperations:
                 assert entity.important_numbers == original_data["important_numbers"]
 
     def test_create_entity(self, api_client):
-        # Данные для создания новой сущности
-        entity_data = {
-            "addition": {
-                "additional_info": "Информация о новой сущности",
-                "additional_number": 999
-            },
-            "important_numbers": [7, 8, 9],
-            "title": "Новая тестовая сущность",
-            "verified": True
-        }
+        # Используем данные из файла test_data.py
+        entity_data = CREATE_ENTITY
         
         try:
             # Отправляем запрос на создание
@@ -115,15 +100,8 @@ class TestEntityOperations:
                     print(f"Ошибка при удалении тестовой сущности: {str(e)}")
 
     def test_delete_entity(self, api_client):
-        entity_data = {
-            "addition": {
-                "additional_info": "Сущность для удаления",
-                "additional_number": 555
-            },
-            "important_numbers": [5, 5, 5],
-            "title": "Тестовая сущность для удаления",
-            "verified": False
-        }
+        # Используем данные из файла test_data.py
+        entity_data = ENTITY_FOR_DELETE
         
         create_response = api_client.post(Entity.CREATING_ENTITY, json=entity_data)
         assert create_response.status_code == 200, "Не удалось создать сущность для теста удаления"
@@ -139,3 +117,5 @@ class TestEntityOperations:
 
         get_after_delete_response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
         assert get_after_delete_response.status_code == 500, f"Ожидался статус 404 (Not Found), получен {get_after_delete_response.status_code}. Сущность не была удалена."
+
+    

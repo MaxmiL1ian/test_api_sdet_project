@@ -1,8 +1,10 @@
 import pytest
+
 from api.client import ApiClient
 from config.settings import API_URL 
 from api.endpoints import Entity 
 from api.models import Entity as EntityModel
+from tests.test_data import DEFAULT_ENTITY, get_multiple_entities
 
 @pytest.fixture
 def api_client():
@@ -14,16 +16,8 @@ def test_entity(api_client):
     """
     Создает тестовую сущность
     """
-    # Данные для создания сущности
-    entity_data = {
-        "addition": {
-            "additional_info": "Тестовая информация",
-            "additional_number": 123
-        },
-        "important_numbers": [1,2,3],
-        "title": "Тестовая сущность",
-        "verified": True
-        }
+    # Используем данные из файла test_data.py
+    entity_data = DEFAULT_ENTITY
     
     entity_id = None
     
@@ -66,17 +60,11 @@ def multiple_test_entities(api_client):
     created_entities = []
     
     try:
-        # Создаем 3 тестовые сущности с разными данными
-        for i in range(3):
-            entity_data = {
-                "addition": {
-                    "additional_info": f"Информация о сущности {i+1}",
-                    "additional_number": 100 * (i + 1)
-                },
-                "important_numbers": [i+1, i+2, i+3],
-                "title": f"Тестовая сущность {i+1}",
-                "verified": i % 2 == 0  # Чередуем True и False
-            }
+        # Используем функцию из файла test_data.py для создания сущностей
+        entities_data = get_multiple_entities(3)
+        
+        # Создаем тестовые сущности с разными данными
+        for entity_data in entities_data:
             
             # Создаем сущность
             response = api_client.post(Entity.CREATING_ENTITY, json=entity_data)
