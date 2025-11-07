@@ -50,7 +50,7 @@ class TestEntityOperations:
         entities_list = EntityList.model_validate(response.json())
         
         assert len(entities_list.entity) > 0
-        
+
         # Получаем список ID из созданных сущностей
         created_ids = [entity["id"] for entity in multiple_test_entities]
         
@@ -68,3 +68,48 @@ class TestEntityOperations:
                 assert entity.addition.additional_info == original_data["addition"]["additional_info"]
                 assert entity.addition.additional_number == original_data["addition"]["additional_number"]
                 assert entity.important_numbers == original_data["important_numbers"]
+
+    def test_create_entity(self, api_client):
+        # Данные для создания новой сущности
+        entity_data = {
+            "addition": {
+                "additional_info": "Информация о новой сущности",
+                "additional_number": 999
+            },
+            "important_numbers": [7, 8, 9],
+            "title": "Новая тестовая сущность",
+            "verified": True
+        }
+        
+        try:
+            # Отправляем запрос на создание
+            response = api_client.post(Entity.CREATING_ENTITY, json=entity_data)
+            
+            assert response.status_code == 200, f"Неожиданный статус-код: {response.status_code}"
+            
+            entity_id = response.json()
+            assert entity_id is not None, "ID сущности отсутствует в ответе"
+            
+            # Опционально: проверяем, что сущность действительно создана, запросив её по ID
+            get_response = api_client.get(Entity.GETTING_ENTITY.replace("{id}", str(entity_id)))
+            assert get_response.status_code == 200, "Не удалось получить созданную сущность"
+            
+            created_entity = EntityModel.model_validate(get_response.json())
+            
+            # Проверяем, что данные созданной сущности соответствуют отправленным
+            assert created_entity.id == entity_id
+            assert created_entity.title == entity_data["title"]
+            assert created_entity.verified == entity_data["verified"]
+            assert created_entity.addition.additional_info == entity_data["addition"]["additional_info"]
+            assert created_entity.addition.additional_number == entity_data["addition"]["additional_number"]
+            assert created_entity.important_numbers == entity_data["important_numbers"]
+
+        finally:
+            # Удаляем созданную сущность, если ID получен
+            if 'entity_id' in locals() and entity_id:
+                try:
+                    delete_response = api_client.delete(Entity.DELETING_ENTITY.replace("{id}", str(entity_id)))
+                    if delete_response.status_code != 204:
+                        print(f"Предупреждение: не удалось удалить тестовую сущность с ID {entity_id}")
+                except Exception as e:
+                    print(f"Ошибка при удалении тестовой сущности: {str(e)}")
