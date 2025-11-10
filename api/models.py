@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 # Модель для вложенного объекта 'addition'
 class Addition(BaseModel):
@@ -9,7 +9,7 @@ class Addition(BaseModel):
 # Основная модель для корневого объекта
 class Entity(BaseModel):
     addition: Addition
-    id: int
+    id: Optional[int] = None  # ID теперь опциональный
     important_numbers: List[int]
     title: str
     verified: bool
