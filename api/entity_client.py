@@ -14,23 +14,22 @@ class EntityClient(ApiClient):
         Создает новую сущность.
         
         Args:
-            entity_data (dict или EntityModel): Данные сущности для создания.
+            entity_data (EntityModel): Данные сущности для создания.
             
         Returns:
             int: ID созданной сущности.
             None: Если создание не удалось.
         """
-        # Проверяем, передан ли объект модели Entity или словарь
-        if isinstance(entity_data, EntityModel):
-            # Преобразуем модель в словарь
-            data_dict = entity_data.model_dump()
-            response = self.post(Entity.CREATING_ENTITY, json=data_dict)
-        else:
-            # Используем словарь напрямую
-            response = self.post(Entity.CREATING_ENTITY, json=entity_data)
+        # Преобразуем модель в словарь
+        data_dict = entity_data.model_dump() if isinstance(entity_data, EntityModel) else entity_data
+        response = self.post(Entity.CREATING_ENTITY, json=data_dict)
         
+        # Проверяем статус-код ответа
+        if response.status_code != 200:
+            return None
+            
         # Возвращаем ID созданной сущности
-        return response.json() if response.status_code == 200 else None
+        return response.json()
     
     def get_entity(self, entity_id):
         """
@@ -73,27 +72,23 @@ class EntityClient(ApiClient):
         
         Args:
             entity_id (int): ID сущности для обновления.
-            entity_data (dict или EntityModel): Новые данные сущности.
+            entity_data (EntityModel): Новые данные сущности.
             
         Returns:
             bool: True, если обновление прошло успешно, иначе False.
         """
-        # Проверяем, передан ли объект модели Entity или словарь
-        if isinstance(entity_data, EntityModel):
-            # Преобразуем модель в словарь
-            data_dict = entity_data.model_dump()
-            response = self.patch(
-                Entity.UPDATING_ENTITY.replace("{id}", str(entity_id)),
-                json=data_dict
-            )
-        else:
-            # Используем словарь напрямую
-            response = self.patch(
-                Entity.UPDATING_ENTITY.replace("{id}", str(entity_id)),
-                json=entity_data
-            )
+        # Преобразуем модель в словарь
+        data_dict = entity_data.model_dump() if isinstance(entity_data, EntityModel) else entity_data
+        response = self.patch(
+            Entity.UPDATING_ENTITY.replace("{id}", str(entity_id)),
+            json=data_dict
+        )
         
-        return response.status_code == 204
+        # Проверяем статус-код ответа
+        if response.status_code != 204:
+            return False
+            
+        return True
     
     def delete_entity(self, entity_id):
         """
@@ -105,6 +100,15 @@ class EntityClient(ApiClient):
         Returns:
             bool: True, если удаление прошло успешно, иначе False.
         """
-        response = self.delete(Entity.DELETING_ENTITY.replace("{id}", str(entity_id)))
-        
-        return response.status_code == 204
+        try:
+            response = self.delete(Entity.DELETING_ENTITY.replace("{id}", str(entity_id)))
+            
+            # Проверяем статус-код ответа
+            if response.status_code != 204:
+                print(f"Предупреждение: не удалось удалить сущность с ID {entity_id}")
+                return False
+                
+            return True
+        except Exception as e:
+            print(f"Ошибка при удалении сущности: {str(e)}")
+            return False

@@ -14,13 +14,8 @@ class TestEntityOperations:
             entity = api_client.get_entity(entity_id)
             assert entity is not None, "Сущность не найдена"
             
-            # Проверяем соответствие всех атрибутов
-            assert entity.id == original_entity.id, "ID сущности не соответствует"
-            assert entity.title == original_entity.title, "Название сущности не соответствует"
-            assert entity.verified == original_entity.verified, "Флаг verified не соответствует"
-            assert entity.important_numbers == original_entity.important_numbers, "Важные числа не соответствуют"
-            assert entity.addition.additional_info == original_entity.addition.additional_info, "Дополнительная информация не соответствует"
-            assert entity.addition.additional_number == original_entity.addition.additional_number, "Дополнительное число не соответствует"
+            # Прямое сравнение моделей
+            assert entity == original_entity, "Полученная сущность не соответствует ожидаемой"
 
     @allure.title("Обновление сущности")
     @allure.description('Тест проверяет возможность обновления сущности')
@@ -45,13 +40,8 @@ class TestEntityOperations:
             updated_entity = api_client.get_entity(entity_id)
             assert updated_entity is not None, "Не удалось получить обновленную сущность"
             
-            # Все поля должны соответствовать обновленной модели
-            assert updated_entity.id == update_model.id, "ID не соответствует"
-            assert updated_entity.title == update_model.title, "Название не соответствует"
-            assert updated_entity.verified == update_model.verified, "Флаг verified не соответствует"
-            assert updated_entity.important_numbers == update_model.important_numbers, "Список чисел не соответствует"
-            assert updated_entity.addition.additional_info == update_model.addition.additional_info, "Доп. информация не соответствует"
-            assert updated_entity.addition.additional_number == update_model.addition.additional_number, "Доп. число не соответствует"
+            # Прямое сравнение моделей
+            assert updated_entity == update_model, "Обновленная сущность не соответствует ожидаемой"
 
     @allure.title("Получение всех сущностей")
     @allure.description('Тест проверяет возможность получения всех сущностей')
@@ -76,12 +66,11 @@ class TestEntityOperations:
                     original_entity = next(e for e in create_multiple_entities if e["id"] == entity.id)
                     test_entity = original_entity["entity"]
                     
-                    # Сравниваем все атрибуты сущности
-                    assert entity.title == test_entity.title
-                    assert entity.verified == test_entity.verified
-                    assert entity.important_numbers == test_entity.important_numbers
-                    assert entity.addition.additional_info == test_entity.addition.additional_info
-                    assert entity.addition.additional_number == test_entity.addition.additional_number
+                    # Прямое сравнение моделей с установкой одинакового ID
+                    entity_copy = entity.model_copy()
+                    test_entity_copy = test_entity.model_copy()
+                    entity_copy.id = test_entity_copy.id = None  # Устанавливаем одинаковое значение ID
+                    assert entity_copy == test_entity_copy, "Полученная сущность не соответствует ожидаемой"
 
     @allure.title("Создание новой сущности")
     @allure.description('Тест проверяет возможность создания новой сущности')
@@ -104,13 +93,13 @@ class TestEntityOperations:
             created_entity = api_client.get_entity(entity_id)
             assert created_entity is not None, "Не удалось получить созданную сущность"
             
-            # Проверяем соответствие всех полей
+            # Проверка ID отдельно
             assert created_entity.id == entity_id, "ID сущности не соответствует"
-            assert created_entity.title == entity_model.title, "Название не соответствует"
-            assert created_entity.verified == entity_model.verified, "Флаг verified не соответствует"
-            assert created_entity.important_numbers == entity_model.important_numbers, "Список чисел не соответствует"
-            assert created_entity.addition.additional_info == entity_model.addition.additional_info, "Доп. информация не соответствует"
-            assert created_entity.addition.additional_number == entity_model.addition.additional_number, "Доп. число не соответствует"
+            
+            # Прямое сравнение моделей с установкой ID в ожидаемой модели
+            expected_entity = entity_model.model_copy()
+            expected_entity.id = entity_id
+            assert created_entity == expected_entity, "Созданная сущность не соответствует ожидаемой"
 
     @allure.title("Удаление сущности")
     @allure.description('Тест проверяет возможность удаления сущности')
@@ -125,7 +114,7 @@ class TestEntityOperations:
             )
             
             entity_id = api_client.create_entity(entity_model)
-            # Страховка: если тест не дойдет до удаления, фикстура cleanup позаботится об очистке
+
             cleanup_entity(entity_id)
             assert entity_id is not None, "Не удалось создать сущность для теста удаления"
             

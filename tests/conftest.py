@@ -6,11 +6,10 @@ from config.settings import API_URL
 from tests.test_data import create_entity_model
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def cleanup_entity(api_client):
     """
-    Фикстура для очистки созданных сущностей после теста.
-    
+    Фикстура для очистки созданных сущностей после каждого теста.
     """
     entity_ids = []
     
@@ -24,23 +23,21 @@ def cleanup_entity(api_client):
     # Удаляем все созданные сущности после завершения теста
     with allure.step("Удаляем созданные сущности"):
         for entity_id in entity_ids:
-            try:
-                success = api_client.delete_entity(entity_id)
-                if not success:
-                    print(f"Предупреждение: не удалось удалить тестовую сущность с ID {entity_id}")
-            except Exception as e:
-                print(f"Ошибка при удалении тестовой сущности: {str(e)}")
+            api_client.delete_entity(entity_id)
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def api_client():
+    """
+    Создает экземпляр API клиента, который будет использоваться тестами.
+    """
     client = EntityClient(API_URL)
     yield client
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def create_test_entity(api_client, cleanup_entity):
     """
     Создает тестовую сущность с уникальными данными и возвращает модель Entity.
-    Автоматически удаляет созданную сущность после завершения теста.
+    Автоматически удаляет созданную сущность после завершения теста,
     """
     # Создаем модель сущности с дефолтными значениями
     entity_model = create_entity_model()
@@ -66,11 +63,11 @@ def create_test_entity(api_client, cleanup_entity):
         yield test_data
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def create_multiple_entities(api_client, cleanup_entity, count=3):
     """
     Создает несколько тестовых сущностей с моделями Entity и удаляет их после теста.
-    Автоматически удаляет созданные сущности после завершения теста.
+    Автоматически удаляет созданные сущности после завершения теста,
     
     Args:
         count (int, optional): Количество создаваемых сущностей. По умолчанию 3.
